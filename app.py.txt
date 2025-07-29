@@ -1,0 +1,53 @@
+import streamlit as st
+import requests
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+API_KEY = os.getenv("AZURE_FOUNDY_API_KEY")
+ENDPOINT = os.getenv("AZURE_FOUNDY_ENDPOINT")
+
+st.set_page_config(page_title="SBM IT Chatbot", page_icon="🖥️", layout="centered")
+st.title("💬 SBM IT Support Chatbot")
+
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+for msg in st.session_state.messages:
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
+
+user_input = st.chat_input("Ask something about SBM IT procedures...")
+
+if user_input:
+    st.session_state.messages.append({"role": "user", "content": user_input})
+    with st.chat_message("user"):
+        st.markdown(user_input)
+
+    headers = {
+        "api-key": API_KEY,
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "inputs": {
+            "input_string": user_input
+        }
+    }
+
+    try:
+        response = requests.post(
+            f"{ENDPOINT}/deployments/gpt-35-turbo/chat",
+            headers=headers,
+            json=payload
+        )
+        response.raise_for_status()
+        answer = response.json().get("outputs", [{}])[0].get("text", "No response.")
+    except Exception as e:
+        answer = f"⚠️ Error: {str(e)}"
+
+    st.session_state.messages.append({"role": "assistant", "content": answer})
+    with st.chat_message("assistant"):
+        st.markdown(answer)
+
