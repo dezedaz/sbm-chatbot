@@ -1,15 +1,12 @@
 import streamlit as st
-import openai
-import os
+from openai import AzureOpenAI  # nouvelle importation
 
-# Charger les secrets Azure
-
-
-
-openai.api_type = "azure"
-openai.api_base = st.secrets["AZURE_OPENAI_ENDPOINT"]
-openai.api_key = st.secrets["AZURE_OPENAI_API_KEY"]
-openai.api_version = st.secrets["AZURE_OPENAI_API_VERSION"]
+# Initialisation du client AzureOpenAI
+client = AzureOpenAI(
+    api_key=st.secrets["AZURE_OPENAI_API_KEY"],
+    api_version=st.secrets["AZURE_OPENAI_API_VERSION"],
+    azure_endpoint=st.secrets["AZURE_OPENAI_ENDPOINT"]
+)
 deployment_name = st.secrets["AZURE_OPENAI_DEPLOYMENT_NAME"]
 
 # Interface
@@ -22,8 +19,8 @@ question = st.text_input("💬 Your question:")
 
 if question:
     try:
-        response = openai.ChatCompletion.create(
-            engine=deployment_name,
+        response = client.chat.completions.create(
+            model=deployment_name,
             messages=[
                 {"role": "system", "content": "You are a helpful IT assistant for employees at SBM."},
                 {"role": "user", "content": question}
@@ -31,6 +28,6 @@ if question:
             temperature=0.5,
             max_tokens=500
         )
-        st.markdown(f"🧠 Response:\n\n{response['choices'][0]['message']['content']}")
+        st.markdown(f"🧠 Response:\n\n{response.choices[0].message.content}")
     except Exception as e:
         st.error(f"❌ Azure API error: {e}")
