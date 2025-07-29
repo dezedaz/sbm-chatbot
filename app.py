@@ -1,76 +1,46 @@
 import streamlit as st
 import requests
-from PIL import Image
 
-# Page setup
-st.set_page_config(
-    page_title="SBM IT Chatbot",
-    page_icon="💻",
-    layout="centered",
-    initial_sidebar_state="auto"
-)
+st.set_page_config(page_title="SBM IT Chatbot", page_icon="💻")
+st.image("sbm_logo.png", width=150)  # Assure-toi d’avoir ce fichier dans le repo
 
-# Display logo in the top-left corner using HTML + CSS
-st.markdown("""
-    <style>
-        .sbm-logo-container {
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            padding-top: 10px;
-            padding-left: 10px;
-        }
-        .sbm-logo-container img {
-            height: 100px;
-        }
-    </style>
-    <div class="sbm-logo-container">
-        <img src="https://raw.githubusercontent.com/dezedaz/sbm-chatbot/main/.streamlit/sbm_logo.png" alt="SBM Logo">
-    </div>
-""", unsafe_allow_html=True)
-
-# App title
 st.title("💻 SBM IT Chatbot")
-st.write("Ask a question related to IT or your workstation. I will try to help you as your virtual assistant!")
+st.write("Ask a question related to IT or your workstation. I will try to help you!")
 
-# Load secrets
+# Récupération des clés depuis secrets.toml
 API_KEY = st.secrets["AZURE_FOUNDY_API_KEY"]
 ENDPOINT = st.secrets["AZURE_FOUNDY_ENDPOINT"]
+DEPLOYMENT_NAME = "gpt-35-turbo"  # Remplace par le nom exact de ton déploiement
 
-# Headers for the Azure Foundry API
+# Configuration de la requête
+url = f"{ENDPOINT}/deployments/{DEPLOYMENT_NAME}/chat/completions?api-version=2024-02-15-preview"
 headers = {
-    "Authorization": f"Bearer {API_KEY}",
-    "Content-Type": "application/json"
+    "Content-Type": "application/json",
+    "api-key": API_KEY
 }
 
-# User input
+# Saisie utilisateur
 question = st.text_input("💬 Your question:")
 
 if question:
     with st.spinner("Thinking..."):
-        # Format message for Azure AI
         payload = {
             "messages": [
-                {"role": "system", "content": "You are an assistant helping employees at Saudi Business Machines (SBM) with IT-related issues."},
+                {"role": "system", "content": "You are an IT assistant for SBM employees."},
                 {"role": "user", "content": question}
             ]
         }
 
-        try:
-            response = requests.post(
-                ENDPOINT,
-                headers=headers,
-                json=payload
-            )
-            data = response.json()
+        response = requests.post(url, headers=headers, json=payload)
 
-            if "choices" in data and data["choices"]:
-                answer = data["choices"][0]["message"]["content"]
-                st.success(answer)
-            else:
-                st.error("No response received from Azure Foundry.")
+        if response.status_code == 200:
+            result = response.json()
+            try:
+                st.success(result["choices"][0]["message"]["content"])
+            except Exception as e:
+                st.error("The response format is unexpected.")
+        else:
+            st.error(f"Azure Error {response.status_code}: {response.text}")
 
-        except Exception as e:
-            st.error(f"Connection error with Azure Foundry: {e}")
 
 
