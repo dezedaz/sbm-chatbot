@@ -1,49 +1,33 @@
 import streamlit as st
-import requests
+import openai
+import os
 
-st.set_page_config(page_title="SBM IT Chatbot", page_icon="💬", layout="centered")
+# Charger les secrets Azure
+openai.api_type = "azure"
+openai.api_base = st.secrets["AZURE_OPENAI_ENDPOINT"]
+openai.api_key = st.secrets["AZURE_OPENAI_API_KEY"]
+openai.api_version = st.secrets["AZURE_OPENAI_API_VERSION"]
+deployment_name = st.secrets["AZURE_OPENAI_DEPLOYMENT_NAME"]
 
-
-st.image(".streamlit/sbm_logo.png", width=150)
-
-
+# Interface
+st.image("sbm_logo.png", width=150)
 st.title("💻 SBM IT Chatbot")
-st.write("Ask a question related to IT or your workstation. I will try to help you as your virtual assistant!")
+st.markdown("Ask a question related to IT or your workstation. I will try to help you as your virtual assistant!")
 
-
-API_KEY = st.secrets["AZURE_FOUNDY_API_KEY"]
-ENDPOINT = st.secrets["AZURE_FOUNDY_ENDPOINT"]
-
+# Interaction
 question = st.text_input("💬 Your question:")
 
 if question:
-    
-    headers = {
-        "Authorization": f"Bearer {API_KEY}",
-        "Content-Type": "application/json"
-    }
-
-    payload = {
-        "messages": [
-            {"role": "system", "content": "You are an IT support assistant for SBM employees."},
-            {"role": "user", "content": question}
-        ]
-    }
-
-    
     try:
-        response = requests.post(ENDPOINT, headers=headers, json=payload)
-        data = response.json()
-
-        if "choices" in data:
-            reply = data["choices"][0]["message"]["content"]
-            st.success(reply)
-        else:
-            st.error("⚠️ Azure response missing 'choices' — check API format or endpoint.")
-
+        response = openai.ChatCompletion.create(
+            engine=deployment_name,
+            messages=[
+                {"role": "system", "content": "You are a helpful IT assistant for employees at SBM."},
+                {"role": "user", "content": question}
+            ],
+            temperature=0.5,
+            max_tokens=500
+        )
+        st.markdown(f"🧠 Response:\n\n{response['choices'][0]['message']['content']}")
     except Exception as e:
-        st.error(f"❌ Azure Foundry error: {e}")
-
-
-
-
+        st.error(f"❌ Azure API error: {e}")
