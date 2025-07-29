@@ -10,9 +10,24 @@ st.set_page_config(
     initial_sidebar_state="auto"
 )
 
-# Display logo
-logo = Image.open(".streamlit/sbm_logo.png")
-st.image(logo, width=180)
+# Display logo in the top-left corner using HTML + CSS
+st.markdown("""
+    <style>
+        .sbm-logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            padding-top: 10px;
+            padding-left: 10px;
+        }
+        .sbm-logo-container img {
+            height: 100px;
+        }
+    </style>
+    <div class="sbm-logo-container">
+        <img src="https://raw.githubusercontent.com/dezedaz/sbm-chatbot/main/.streamlit/sbm_logo.png" alt="SBM Logo">
+    </div>
+""", unsafe_allow_html=True)
 
 # App title
 st.title("💻 SBM IT Chatbot")
@@ -57,4 +72,5 @@ if question:
 
         except Exception as e:
             st.error(f"Connection error with Azure Foundry: {e}")
+
 
